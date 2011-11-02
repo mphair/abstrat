@@ -83,7 +83,7 @@ class Config:
         return self.__defaultTeachingMultiplier
 
     def GetDefaultLeachingTargetRate(self):
-        return self.__defaultLeachingTargetRate,
+        return self.__defaultLeachingTargetRate
     def GetDefaultLeachingPowers(self):
         return copy.deepcopy(self.__defaultLeachingPowers)
     def GetDefaultLeachingDefenses(self):

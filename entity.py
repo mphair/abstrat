@@ -31,10 +31,10 @@ class Entity:
         s+= " Advancements: "+str(self.Advancements)+"\n"
         s+= " Movement Rate: "+str(self.MovementRate)+"\n"
         s+= " Teaching Multiplier: "+str(self.TeachingMultiplier)+"\n"
-        s+= " Leaching Target Rate: "+str(self.LeachingTargetRate)
-        s+= " Leaching Powers: "+str(self.LeachingPowers)
-        s+= " Leaching Defenses: "+str(self.LeachingDefenses)
-        s+= " Leaching Efficencies: "+str(self.LeachingEfficencies)
+        s+= " Leaching Target Rate: "+str(self.LeachingTargetRate)+"\n"
+        s+= " Leaching Powers: "+str(self.LeachingPowers)+"\n"
+        s+= " Leaching Defenses: "+str(self.LeachingDefenses)+"\n"
+        s+= " Leaching Efficencies: "+str(self.LeachingEfficencies)+"\n"
         return s
     def ToJson(self):
         return json.dumps({
@@ -181,6 +181,7 @@ class Entity:
         resultFunc(self)
 
     def Leach(self):
+        print self.LeachingTargetRate
         for targetEntity in self.PendingLeachings[:self.LeachingTargetRate]:
             if self.Universe.DEBUG_LEACH: print self.Name, "trying to leach from", targetEntity.Name
             if self.PresentInCell.IsNStepsAwayFrom(targetEntity.PresentInCell, 1): continue # TODO: add leaching distance

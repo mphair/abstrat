@@ -113,7 +113,7 @@ class Actions:
                 del entity
 
     def DoLeach(self):
-        for (entity, target) in self.PendingLeaches:
+        for (entity, target) in self.PendingLeachings:
             entity.PendingLeaches.append(target)
             if self.universe.DEBUG_LEACH: print "DoLeach:", entity.Name, target.Name
             entity.PendingLeachings.append(target)

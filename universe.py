@@ -81,7 +81,7 @@ class Universe:
         return self.__DefaultTeachingMultiplier
 
     def GetDefaultLeachingTargetRate(self):
-        return self.__DefaultLeachingTargetRate,
+        return self.__DefaultLeachingTargetRate
     def GetDefaultLeachingPowers(self):
         return copy.deepcopy(self.__DefaultLeachingPowers)
     def GetDefaultLeachingDefenses(self):
@@ -152,11 +152,11 @@ class Universe:
         self.DEBUG_DISCOVER = True
         self.DEBUG_ENERGY = True
         print "try to discover ahead of schedule"
-        self.actions.PendingDiscoveries.append((self.entities[0],u"movement+2",((u"n1",1),)))
+        self.actions.PendingDiscoveries.append((self.entities[0],u"movement+2",((u"n1",2),)))
         self.DoTimeStep()
         print self.entities
         print "now discover prereq"
-        self.actions.PendingDiscoveries.append((self.entities[0],u"movement+1",((u"n1",1),)))
+        self.actions.PendingDiscoveries.append((self.entities[0],u"movement+1",((u"n1",2),)))
         self.DoTimeStep()
         print self.entities
         print "now discover again"
