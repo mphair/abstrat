@@ -18,8 +18,18 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             content = s
         self.wfile.write(content)
+    def respondHtml(self, filename):
+        self.send_response(200)
+        self.send_header("Content Type", "text/html")
+        self.end_headers()
+        f = open(filename)
+        content = f.read()
+        f.close()
+        del f
+        self.wfile.write(content)
 
     def do_GET(self):
+        print "get request"
         pathParts = self.path.split("/")
         print pathParts
         if pathParts[1].lower() == 'timestep':
@@ -38,6 +48,11 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.respondJson(s=universeStates[timestep])
             else:
                 self.send_error(404, "timestep not available:"+str(timestep))
+        elif pathParts[1].lower() == "html":
+            if pathParts[2].lower() == "celllayout.html":
+                self.respondHtml("cellLayout.html")
+            else:
+                self.send_error(404, "unknown file:"+pathParts[2])
         else:
             self.send_error(404)
             
@@ -65,4 +80,5 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 if __name__ == "__main__":
     HOST, PORT = "localhost", 80
     server = BaseHTTPServer.HTTPServer((HOST, PORT), AbstratRESTHandler)
+    print "hosting at", HOST, ":", PORT
     server.serve_forever()

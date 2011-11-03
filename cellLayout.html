@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Cells</title>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.6"></script>
+    <style type="text/css">
+
+body {
+  font: 10px sans-serif;
+}
+
+circle.empty {
+  fill: #fff;
+  stroke: #666;
+  stroke-width: 2px;
+}
+
+circle.full {
+  fill: #00f;
+  stroke: #666;
+  stroke-width: 2px;
+}
+
+line.neighbor {
+  stroke: #900;
+  stroke-width: 2px;
+}
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+      var width = screen.width;
+      var height = 400;
+      var vis = d3.select("body")
+        .append("svg:svg")
+        .attr("width", screen.width)
+        .attr("height", height);
+
+      d3.json("../cells/all", function(json) { 
+
+        var x = d3.scale.linear().domain([-1,10]).range([0, width - 1]);
+        var y = d3.scale.linear().domain([-1,10]).range([0, height - 1]);
+
+    var neighborLines = [];
+    for (cellIndex=0; cellIndex < json.cells.length; cellIndex++)
+    {
+      var cell = json.cells[cellIndex];
+      for (nIndex=0; nIndex < cell.neighbors.length; nIndex++)
+      {
+        var neighbor = cell.neighbors[nIndex];
+        neighborLines.push([cell.name,neighbor]);
+      }
+    }
+
+    vis.selectAll("line")
+    .data(neighborLines)
+    .enter()
+    .append("svg:line")
+    .attr("x1", function(L) { return x(parseFloat(L[0].substring(0,1))) })
+    .attr("y1", function(L) { return y(parseFloat(L[0].substring(2,3))) })
+    .attr("x2", function(L) { return x(parseFloat(L[1].substring(0,1))) })
+    .attr("y2", function(L) { return y(parseFloat(L[1].substring(2,3))) })
+    .attr("class", "neighbor");
+
+    vis.selectAll("circle")
+    .data(json.cells)
+    .enter()
+    .append("svg:circle")
+    .attr("cx", function(c) { return x(parseFloat(c.name.substring(0,1))) })
+    .attr("cy", function(c) { return y(parseFloat(c.name.substring(2,3))) })
+    .attr("class", function(c) { return (c.entityPresent == null) ? "empty" : "full"; })
+    .attr("visibility", "visible")
+    .attr("r", "10");
+
+    var cellsWithEntities = json.cells.filter(function(cell, index, array) { return cell.entityPresent != null; });
+
+    vis.selectAll("text")
+    .data(cellsWithEntities)
+    .enter()
+    .append("svg:text")
+    .attr("x", function(c) { return x(parseFloat(c.name.substring(0,1))) })
+    .attr("y", function(c) { return y(parseFloat(c.name.substring(2,3))) })
+    .attr("dy", ".15em")
+    .attr("text-anchor", "middle")
+    .attr("fill", "white")
+    .attr("stroke", "black")
+    .attr("stroke-width", 1.5)
+    .style("font", "20pt Comic Sans MS")
+    .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
+    .text(function(cell) { return cell.entityPresent; });
+
+
+});
+/*
+  vis.selectAll("text")
+    .data(json.cells)
+    .append("svg:text")
+    .attr("x", "50%")
+    .attr("y", "50%")
+    .attr("dy", ".35em")
+    .attr("text-anchor", "middle")
+    .attr("fill", "white")
+    .attr("stroke", "black")
+    .attr("stroke-width", 1.5)
+    .style("font", "36pt Comic Sans MS")
+    .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
+    .text(function(cell) { return cell.Name; });
+
+/ *
+        var x = d3.scale.linear().domain([-1,10]).range([0, screen.width - 1])
+        var y = d3.scale.linear().domain([-1,10]).range([0, screen.height - 1])
+        
+        vis.selectAll("circle")
+          .data(json.cells)
+          .enter()
+          .append("svg:circle")
+          .attr("cx", function(c) { return x(parseFloat(c.name.substring(0,1))) })
+          .attr("cy", function(c) { return y(parseFloat(c.name.substring(2,1))) })
+          .attr("stroke-width", 1)
+          .attr("fill", "none")
+          .attr("visibility", "visible")
+* /
+      });
+*/
+    </script>
+  </body>
+</html>
