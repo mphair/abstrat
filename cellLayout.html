@@ -4,10 +4,11 @@
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <title>Cells</title>
     <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.6"></script>
+<!-- for offline    <script type="text/javascript" src="../d3.js"></script> -->
     <style type="text/css">
 
 body {
-  font: 10px sans-serif;
+  font: 16px sans-serif;
 }
 
 circle.empty {
@@ -88,7 +89,26 @@ line.neighbor {
     .attr("stroke-width", 1.5)
     .style("font", "20pt Comic Sans MS")
     .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-    .text(function(cell) { return cell.entityPresent; });
+    .text(function(cell) { return cell.entityPresent; })
+    .on("mouseover", function (d,i) { d3.select(this).attr("fill", "yellow"); })
+    .on("mouseout", function (d,i) { d3.select(this).attr("fill", "white"); })
+    .on("click", function (d,i) {
+      d3.json("../entities/"+d3.select(this).text(), function(entity) {
+        var s = "==== Entity: " + entity.name + "(" + entity.team +") ====<br>";
+        s+= " Location: "+entity.presentInCell+"<br>";
+        s+= " Energy Stores: "+energyDictToText(entity.energyStores)+"<br>";
+        s+= " Advancements: "+entity.advancements+"<br>";
+        s+= " Movement Rate: "+entity.movementRate+"<br>";
+        s+= " Teaching Multiplier: "+entity.teachingMultiplier+"<br>";
+        s+= " Leaching Target Rate: "+entity.leachingTargetRate+"<br>";
+        s+= " Leaching Powers: "+energyDictToText(entity.leachingPowers)+"<br>";
+        s+= " Leaching Defenses: "+energyDictToText(entity.leachingDefenses)+"<br>";
+        s+= " Leaching Efficencies: "+energyDictToText(entity.leachingEfficencies)+"<br>";
+        d3.select("#info").html(s); 
+      });
+    })
+    ;
+
 
 
 });
@@ -123,6 +143,17 @@ line.neighbor {
 * /
       });
 */
+
+    function energyDictToText(d) {
+      var result = "[";
+      for (energyType in d) {
+        result += energyType + ": " + d[energyType] + ", ";
+      }
+      return result + "]";
+    }
+
     </script>
+  <div id="info"></div>
+
   </body>
 </html>

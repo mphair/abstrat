@@ -19,8 +19,12 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             content = s
         self.wfile.write(content)
     def respondHtml(self, filename):
+        self.respondContent(filename, "text/html")
+    def respondJavascript(self, filename):
+        self.respondContent(filename, "application/javascript")
+    def respondContent(self, filename, contenttype):
         self.send_response(200)
-        self.send_header("Content Type", "text/html")
+        self.send_header("Content Type", contenttype)
         self.end_headers()
         f = open(filename)
         content = f.read()
@@ -48,11 +52,24 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.respondJson(s=universeStates[timestep])
             else:
                 self.send_error(404, "timestep not available:"+str(timestep))
+        elif pathParts[1].lower() == 'entities':
+            responded = False
+            for entity in universe.entities:
+                if entity.Name.lower() == pathParts[2].lower():
+                    self.respondJson(s=entity.ToJson())
+                    responded = True
+                    break
+            if not(responded):
+                print "not responded"
+                self.send_error(404, "entity "+pathParts[2]+" not found")
         elif pathParts[1].lower() == "html":
             if pathParts[2].lower() == "celllayout.html":
                 self.respondHtml("cellLayout.html")
             else:
                 self.send_error(404, "unknown file:"+pathParts[2])
+##for offline use
+##        elif pathParts[1].lower() == "d3.js":
+##            self.respondJavascript("d3.js")
         else:
             self.send_error(404)
             
@@ -78,7 +95,7 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404)
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 80
+    HOST, PORT = "127.0.0.1", 8080
     server = BaseHTTPServer.HTTPServer((HOST, PORT), AbstratRESTHandler)
     print "hosting at", HOST, ":", PORT
     server.serve_forever()
