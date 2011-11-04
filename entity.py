@@ -178,6 +178,7 @@ class Entity:
         else:
             if self.Universe.DEBUG_LEARN: print "no prereqs for:", name
         self.Advancements[name] = (energySoFar, True)
+        if self.Universe.DEBUG_LEARN: print "executing result function for:", name
         resultFunc(self)
 
     def Leach(self):

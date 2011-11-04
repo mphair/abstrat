@@ -70,6 +70,8 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 ##for offline use
 ##        elif pathParts[1].lower() == "d3.js":
 ##            self.respondJavascript("d3.js")
+        elif pathParts[1].lower() == "config":
+            self.respondJson(s=universe.config.ToJson())
         else:
             self.send_error(404)
             

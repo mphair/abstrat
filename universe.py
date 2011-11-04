@@ -149,8 +149,9 @@ class Universe:
                 next[n] = next[n].Neighbors[0]
         self.DoTimeStep()
         print self.entities
-        self.DEBUG_DISCOVER = True
-        self.DEBUG_ENERGY = True
+#        self.DEBUG_DISCOVER = True
+#        self.DEBUG_LEARN = True
+#        self.DEBUG_ENERGY = True
         print "try to discover ahead of schedule"
         self.actions.PendingDiscoveries.append((self.entities[0],u"movement+2",((u"n1",2),)))
         self.DoTimeStep()
