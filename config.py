@@ -77,7 +77,7 @@ class Config:
         advancements = dict()
         for name,adv in self.__advancementsPlan.items():
             energyRequirements, prereqs, funcName, funcArgs = adv
-            advancements[name] = (energyRequirements, prereqs, lambda x: AdvancementFunctions[funcName](x, funcArgs))
+            advancements[name] = (energyRequirements, prereqs, makeAdvancementFunction(AdvancementFunctions[funcName], funcArgs))
         return advancements
     def GetDefaultTeachingMultiplier(self):
         return self.__defaultTeachingMultiplier
@@ -144,6 +144,11 @@ def LeachingEfficencyPlus(entity, args):
 AdvancementFunctions[u"LeachingEfficencyPlus"] = LeachingEfficencyPlus
 
 #################### HELPERS ##################
+def makeAdvancementFunction(func, args):
+    """Wrapping this lambda in a function call makes it a closure so that args
+       doesn't get incorrectly shared between calls."""
+    return lambda x: func(x, args)
+
 def valueOrDefault(d, key, default):
     if d.has_key(key): return d[key]
     else: return default
