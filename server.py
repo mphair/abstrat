@@ -95,7 +95,7 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404)
 
 if __name__ == "__main__":
-    HOST, PORT = "127.0.0.1", 8080
+    HOST, PORT = "0.0.0.0", 8080
     server = BaseHTTPServer.HTTPServer((HOST, PORT), AbstratRESTHandler)
     print "hosting at", HOST, ":", PORT
     server.serve_forever()
