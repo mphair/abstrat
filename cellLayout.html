@@ -3,8 +3,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <title>Cells</title>
-    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.6"></script>
-<!-- for offline    <script type="text/javascript" src="../d3.js"></script> -->
+<!--    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.4.6"></script> -->
+<script type="text/javascript" src="../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -31,6 +31,11 @@ line.neighbor {
   </head>
   <body>
     <script type="text/javascript">
+      var Timestep = null;
+      d3.json("../timestep/latest", function(json) {
+          Timestep = json.t;
+      });
+      var SelectedEntity = null;
       var width = screen.width;
       var height = 400;
       var vis = d3.select("body")
@@ -94,6 +99,7 @@ line.neighbor {
     .on("mouseout", function (d,i) { d3.select(this).attr("fill", "white"); })
     .on("click", function (d,i) {
       d3.json("../entities/"+d3.select(this).text(), function(entity) {
+        SelectedEntity = entity;
         var s = "==== Entity: " + entity.name + "(" + entity.team +") ====<br>";
         s+= " Location: "+entity.presentInCell+"<br>";
         s+= " Energy Stores: "+energyDictToText(entity.energyStores)+"<br>";
@@ -104,6 +110,11 @@ line.neighbor {
         s+= " Leaching Powers: "+energyDictToText(entity.leachingPowers)+"<br>";
         s+= " Leaching Defenses: "+energyDictToText(entity.leachingDefenses)+"<br>";
         s+= " Leaching Efficencies: "+energyDictToText(entity.leachingEfficencies)+"<br>";
+        s+= "<form>";
+        s+= "Move: <input type=\"text\" id=\"txtmove\" />";
+//        s+= "<button id=\"move\" onclick=\"DoMove();\">move</button>";
+        s+= "<a href=\"#\" onclick=\"DoMove();\">move</button>";
+        s+= "</form>";
         d3.select("#info").html(s); 
       });
     })
@@ -112,6 +123,23 @@ line.neighbor {
 
 
 });
+    function DoMove() {
+      var pendingDiscoveries = []; // [(entity.Name, advName, energyExpend) for (entity, advName, energyExpend) in self.PendingDiscoveries],
+      var pendingTeachings = []; //[(entity.Name, advName, energyExpend, target.Name) for (entity, advName, energyExpend, target) in self.PendingTeachings],
+      var pendingLeachings = []; //[(entity.Name, target.Name) for (entity,target) in self.PendingLeachings],
+      var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
+      var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
+      d3.select("#toPost").text(pendingMoves)
+      var actions = {
+        'pendingDiscoveries': pendingDiscoveries,
+        'pendingTeachings': pendingTeachings,
+        'pendingLeachings': pendingLeachings,
+        'pendingMoves': pendingMoves,
+        'pendingSplits': pendingSplits
+      };
+      json_post("../actions/" + Timestep + "/" + SelectedEntity.team, JSON.stringify(actions), function(json) { d3.select("#debugResponse").text(json) });
+    }
+
     function energyDictToText(d) {
       var result = [];
       for (energyType in d) {
@@ -138,8 +166,37 @@ line.neighbor {
                + "]";
     }
 
+    function xhr_post(url, data, mime, callback) {
+      var req = new XMLHttpRequest;
+      if (arguments.length < 4) callback = mime;
+      else if (mime && req.overrideMimeType) req.overrideMimeType(mime);
+      req.open("POST", url, true);
+      req.onreadystatechange = function() {
+        if (req.readyState === 4) callback(req.status < 300 ? req : null);
+      };
+      req.send(data);
+    };
+
+    function text_post(url, data, mime, callback) {
+      function ready(req) {
+        callback(req && req.responseText);
+      }
+      if (arguments.length < 4) {
+        callback = mime;
+        mime = null;
+      }
+      xhr_post(url, data, mime, ready);
+    };
+
+    function json_post(url, data, callback) {
+      text_post(url, data, "application/json", function(text) {
+        callback(text ? JSON.parse(text) : null);
+      });
+    };
+
     </script>
   <div id="info"></div>
-
+  <div id="toPost"></div>
+  <div id="debugResponse"></div>
   </body>
 </html>
