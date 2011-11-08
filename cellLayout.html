@@ -31,169 +31,189 @@ line.neighbor {
   </head>
   <body>
     <script type="text/javascript">
-      var Timestep = null;
-      d3.json("../timestep/latest", function(json) {
-          Timestep = json.t;
-      });
-      var SelectedEntity = null;
-      var width = screen.width;
-      var height = 400;
-      var vis = d3.select("body")
-        .append("svg:svg")
-        .attr("width", screen.width)
-        .attr("height", height);
-
-      d3.json("../cells/all", function(json) { 
-
+        var Timestep = null;
+        var SelectedEntity = null;
+        var width = screen.width;
+        var height = 400;
         var x = d3.scale.linear().domain([-1,10]).range([0, width - 1]);
         var y = d3.scale.linear().domain([-1,10]).range([0, height - 1]);
+        
+        var vis = d3.select("body")
+            .append("svg:svg")
+            .attr("width", screen.width)
+            .attr("height", height);
 
-    var neighborLines = [];
-    for (cellIndex=0; cellIndex < json.cells.length; cellIndex++)
-    {
-      var cell = json.cells[cellIndex];
-      for (nIndex=0; nIndex < cell.neighbors.length; nIndex++)
-      {
-        var neighbor = cell.neighbors[nIndex];
-        neighborLines.push([cell.name,neighbor]);
-      }
-    }
+        CheckForNewTimestamp();
 
-    vis.selectAll("line")
-    .data(neighborLines)
-    .enter()
-    .append("svg:line")
-    .attr("x1", function(L) { return x(parseFloat(L[0].substring(0,1))) })
-    .attr("y1", function(L) { return y(parseFloat(L[0].substring(2,3))) })
-    .attr("x2", function(L) { return x(parseFloat(L[1].substring(0,1))) })
-    .attr("y2", function(L) { return y(parseFloat(L[1].substring(2,3))) })
-    .attr("class", "neighbor");
-
-    vis.selectAll("circle")
-    .data(json.cells)
-    .enter()
-    .append("svg:circle")
-    .attr("cx", function(c) { return x(parseFloat(c.name.substring(0,1))) })
-    .attr("cy", function(c) { return y(parseFloat(c.name.substring(2,3))) })
-    .attr("class", function(c) { return (c.entityPresent == null) ? "empty" : "full"; })
-    .attr("visibility", "visible")
-    .attr("r", "10");
-
-    var cellsWithEntities = json.cells.filter(function(cell, index, array) { return cell.entityPresent != null; });
-
-    vis.selectAll("text")
-    .data(cellsWithEntities)
-    .enter()
-    .append("svg:text")
-    .attr("x", function(c) { return x(parseFloat(c.name.substring(0,1))) })
-    .attr("y", function(c) { return y(parseFloat(c.name.substring(2,3))) })
-    .attr("dy", ".15em")
-    .attr("text-anchor", "middle")
-    .attr("fill", "white")
-    .attr("stroke", "black")
-    .attr("stroke-width", 1.5)
-    .style("font", "20pt Comic Sans MS")
-    .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-    .text(function(cell) { return cell.entityPresent; })
-    .on("mouseover", function (d,i) { d3.select(this).attr("fill", "yellow"); })
-    .on("mouseout", function (d,i) { d3.select(this).attr("fill", "white"); })
-    .on("click", function (d,i) {
-      d3.json("../entities/"+d3.select(this).text(), function(entity) {
-        SelectedEntity = entity;
-        var s = "==== Entity: " + entity.name + "(" + entity.team +") ====<br>";
-        s+= " Location: "+entity.presentInCell+"<br>";
-        s+= " Energy Stores: "+energyDictToText(entity.energyStores)+"<br>";
-        s+= " Advancements: "+advancementDictToText(entity.advancements)+"<br>";
-        s+= " Movement Rate: "+entity.movementRate+"<br>";
-        s+= " Teaching Multiplier: "+entity.teachingMultiplier+"<br>";
-        s+= " Leaching Target Rate: "+entity.leachingTargetRate+"<br>";
-        s+= " Leaching Powers: "+energyDictToText(entity.leachingPowers)+"<br>";
-        s+= " Leaching Defenses: "+energyDictToText(entity.leachingDefenses)+"<br>";
-        s+= " Leaching Efficencies: "+energyDictToText(entity.leachingEfficencies)+"<br>";
-        s+= "<form>";
-        s+= "Move: <input type=\"text\" id=\"txtmove\" />";
-//        s+= "<button id=\"move\" onclick=\"DoMove();\">move</button>";
-        s+= "<a href=\"#\" onclick=\"DoMove();\">move</button>";
-        s+= "</form>";
-        d3.select("#info").html(s); 
-      });
-    })
-    ;
-
-
-
-});
-    function DoMove() {
-      var pendingDiscoveries = []; // [(entity.Name, advName, energyExpend) for (entity, advName, energyExpend) in self.PendingDiscoveries],
-      var pendingTeachings = []; //[(entity.Name, advName, energyExpend, target.Name) for (entity, advName, energyExpend, target) in self.PendingTeachings],
-      var pendingLeachings = []; //[(entity.Name, target.Name) for (entity,target) in self.PendingLeachings],
-      var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
-      var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
-      d3.select("#toPost").text(pendingMoves)
-      var actions = {
-        'pendingDiscoveries': pendingDiscoveries,
-        'pendingTeachings': pendingTeachings,
-        'pendingLeachings': pendingLeachings,
-        'pendingMoves': pendingMoves,
-        'pendingSplits': pendingSplits
-      };
-      json_post("../actions/" + Timestep + "/" + SelectedEntity.team, JSON.stringify(actions), function(json) { d3.select("#debugResponse").text(json) });
-    }
-
-    function energyDictToText(d) {
-      var result = [];
-      for (energyType in d) {
-        result.push(energyType + ": " + d[energyType]);
-      }
-      return "[" + result.join(", ") + "]";
-    }
-
-    function advancementDictToText(d) {
-      var complete = [];
-      var incomplete = [];
-      for (advancement in d) {
-        if (d[advancement][1]) {
-          complete.push(advancement)
-        } else {
-          incomplete.push(advancement + ": " + energyDictToText(d[advancement][0]))
+        function CheckForNewTimestamp() {
+            d3.json("../timestep/latest", function(json) {
+                if (Timestep != json.t) {
+                    Timestep = json.t;
+                    FetchCellLayout();
+                }
+            });
         }
-      }
-      
-      return "complete: ["
-               + complete.join(", ")
-               + "] incomplete: ["
-               + incomplete.join(", ")
-               + "]";
-    }
 
-    function xhr_post(url, data, mime, callback) {
-      var req = new XMLHttpRequest;
-      if (arguments.length < 4) callback = mime;
-      else if (mime && req.overrideMimeType) req.overrideMimeType(mime);
-      req.open("POST", url, true);
-      req.onreadystatechange = function() {
-        if (req.readyState === 4) callback(req.status < 300 ? req : null);
-      };
-      req.send(data);
-    };
+        function FetchCellLayout() {
+            d3.json("../cells/all", function(json) {
+                d3.select("#info").text(""); 
+                d3.select("#toPost").text("");
+                SelectedEntity = null;
+                var neighborLines = [];
+                for (cellIndex=0; cellIndex < json.cells.length; cellIndex++)
+                {
+                    var cell = json.cells[cellIndex];
+                    for (nIndex=0; nIndex < cell.neighbors.length; nIndex++)
+                    {
+                        var neighbor = cell.neighbors[nIndex];
+                        neighborLines.push([cell.name,neighbor]);
+                    }
+                }
 
-    function text_post(url, data, mime, callback) {
-      function ready(req) {
-        callback(req && req.responseText);
-      }
-      if (arguments.length < 4) {
-        callback = mime;
-        mime = null;
-      }
-      xhr_post(url, data, mime, ready);
-    };
+                var lines = vis.selectAll("line")
+                    .data(neighborLines);
+                lines.enter()
+                    .append("svg:line")
+                    .attr("class", "neighbor");
+                lines.exit().remove();
+                vis.selectAll("line")
+                    .data(neighborLines)
+                    .attr("x1", function(L) { return x(parseFloat(L[0].substring(0,1))) })
+                    .attr("y1", function(L) { return y(parseFloat(L[0].substring(2,3))) })
+                    .attr("x2", function(L) { return x(parseFloat(L[1].substring(0,1))) })
+                    .attr("y2", function(L) { return y(parseFloat(L[1].substring(2,3))) });
 
-    function json_post(url, data, callback) {
-      text_post(url, data, "application/json", function(text) {
-        callback(text ? JSON.parse(text) : null);
-      });
-    };
+                var circles = vis.selectAll("circle")
+                    .data(json.cells);
+                circles.enter()
+                    .append("svg:circle")
+                    .attr("visibility", "visible")
+                    .attr("r", "10");
+                circles.exit().remove();
+                vis.selectAll("circle")
+                    .data(json.cells)
+                    .attr("cx", function(c) { return x(parseFloat(c.name.substring(0,1))) })
+                    .attr("cy", function(c) { return y(parseFloat(c.name.substring(2,3))) })
+                    .attr("class", function(c) { return (c.entityPresent == null) ? "empty" : "full"; });
 
+                var cellsWithEntities = json.cells.filter(function(cell, index, array) { return cell.entityPresent != null; });
+
+                var texts = vis.selectAll("text")
+                    .data(cellsWithEntities);
+                texts.enter()
+                    .append("svg:text")
+                    .attr("dy", ".15em")
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "white")
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 1.5)
+                    .style("font", "20pt Comic Sans MS")
+                    .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
+                    .on("mouseover", function (d,i) { d3.select(this).attr("fill", "yellow"); })
+                    .on("mouseout", function (d,i) { d3.select(this).attr("fill", "white"); })
+                    .on("click", function (d,i) {
+                        d3.json("../entities/"+d3.select(this).text(), function(entity) {
+                            SelectedEntity = entity;
+                            var s = "==== Entity: " + entity.name + "(" + entity.team +") ====<br>";
+                            s+= " Location: "+entity.presentInCell+"<br>";
+                            s+= " Energy Stores: "+energyDictToText(entity.energyStores)+"<br>";
+                            s+= " Advancements: "+advancementDictToText(entity.advancements)+"<br>";
+                            s+= " Movement Rate: "+entity.movementRate+"<br>";
+                            s+= " Teaching Multiplier: "+entity.teachingMultiplier+"<br>";
+                            s+= " Leaching Target Rate: "+entity.leachingTargetRate+"<br>";
+                            s+= " Leaching Powers: "+energyDictToText(entity.leachingPowers)+"<br>";
+                            s+= " Leaching Defenses: "+energyDictToText(entity.leachingDefenses)+"<br>";
+                            s+= " Leaching Efficencies: "+energyDictToText(entity.leachingEfficencies)+"<br>";
+                            s+= "<form>";
+                            s+= "Move: <input type=\"text\" id=\"txtmove\" />";
+                            //        s+= "<button id=\"move\" onclick=\"DoMove();\">move</button>";
+                            s+= "<a href=\"#\" onclick=\"DoMove();\">move</button>";
+                            s+= "</form>";
+                            d3.select("#info").html(s); 
+                        });
+                    });
+                texts.exit().remove();
+                vis.selectAll("text")
+                    .data(cellsWithEntities)
+                    .attr("x", function(c) { return x(parseFloat(c.name.substring(0,1))) })
+                    .attr("y", function(c) { return y(parseFloat(c.name.substring(2,3))) })
+                    .text(function(cell) { return cell.entityPresent; });
+            }); // end cell json fetch
+        } // end FetchCellLayout
+
+        function DoMove() {
+            var pendingDiscoveries = []; // [(entity.Name, advName, energyExpend) for (entity, advName, energyExpend) in self.PendingDiscoveries],
+            var pendingTeachings = []; //[(entity.Name, advName, energyExpend, target.Name) for (entity, advName, energyExpend, target) in self.PendingTeachings],
+            var pendingLeachings = []; //[(entity.Name, target.Name) for (entity,target) in self.PendingLeachings],
+            var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
+            var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
+            d3.select("#toPost").text(pendingMoves);
+            var actions = {
+                'pendingDiscoveries': pendingDiscoveries,
+                'pendingTeachings': pendingTeachings,
+                'pendingLeachings': pendingLeachings,
+                'pendingMoves': pendingMoves,
+                'pendingSplits': pendingSplits
+            };
+            json_post("../actions/" + Timestep + "/" + SelectedEntity.team, JSON.stringify(actions), function(json) {
+                d3.select("#debugResponse").text(json);
+                CheckForNewTimestamp();
+            });
+        }
+
+        function energyDictToText(d) {
+            var result = [];
+            for (energyType in d) {
+                result.push(energyType + ": " + d[energyType]);
+            }
+            return "[" + result.join(", ") + "]";
+        }
+
+        function advancementDictToText(d) {
+            var complete = [];
+            var incomplete = [];
+            for (advancement in d) {
+                if (d[advancement][1]) {
+                    complete.push(advancement)
+                } else {
+                    incomplete.push(advancement + ": " + energyDictToText(d[advancement][0]))
+                }
+            }
+
+            return "complete: ["
+                + complete.join(", ")
+                + "] incomplete: ["
+                + incomplete.join(", ")
+                + "]";
+        }
+
+        function xhr_post(url, data, mime, callback) {
+            var req = new XMLHttpRequest;
+            if (arguments.length < 4) callback = mime;
+            else if (mime && req.overrideMimeType) req.overrideMimeType(mime);
+            req.open("POST", url, true);
+            req.onreadystatechange = function() {
+                if (req.readyState === 4) callback(req.status < 300 ? req : null);
+            };
+            req.send(data);
+        }
+
+        function text_post(url, data, mime, callback) {
+            function ready(req) {
+                callback(req && req.responseText);
+            }
+            if (arguments.length < 4) {
+                callback = mime;
+                mime = null;
+            }
+            xhr_post(url, data, mime, ready);
+        }
+
+        function json_post(url, data, callback) {
+            text_post(url, data, "application/json", function(text) {
+                callback(text ? JSON.parse(text) : null);
+            });
+        }
     </script>
   <div id="info"></div>
   <div id="toPost"></div>
