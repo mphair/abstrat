@@ -43,11 +43,16 @@ class Actions:
         for entity in universe.entities:
             entityDict[entity.Name] = entity
 
-        actions.PendingDiscoveries = [(entityDict[ename], advName, energyExpend) for (ename, advName, energyExpend) in d['pendingDiscoveries']]
-        actions.PendingTeachings = [(entityDict[ename], advName, energyExpend, entityDict[targetName]) for (ename, advName, energyExpend, targetName) in d['pendingTeachings']]
-        actions.PendingLeachings = [(entityDict[ename], entityDict[tname]) for (ename, tname) in d['pendingLeachings']]
-        actions.PendingMoves = [(entityDict[ename], cellDict[cname]) for (ename, cname) in d['pendingMoves']]
-        actions.PendingSplits = [(entityDict[ename], cellDict[cname]) for (ename,cname) in d['pendingSplits']]
+        actions.PendingDiscoveries = [
+            (entityDict[ename], advName, energyExpend) for (ename, advName, energyExpend) in ValueOrDefault(d, 'pendingDiscoveries', [])]
+        actions.PendingTeachings = [
+            (entityDict[ename], advName, energyExpend, entityDict[targetName]) for (ename, advName, energyExpend, targetName) in ValueOrDefault(d, 'pendingTeachings', [])]
+        actions.PendingLeachings = [
+            (entityDict[ename], entityDict[tname]) for (ename, tname) in ValueOrDefault(d, 'pendingLeachings', [])]
+        actions.PendingMoves = [
+            (entityDict[ename], cellDict[cname]) for (ename, cname) in ValueOrDefault(d, 'pendingMoves', [])]
+        actions.PendingSplits = [
+            (entityDict[ename], cellDict[cname]) for (ename,cname) in ValueOrDefault(d, 'pendingSplits', [])]
 
         return actions
 
@@ -69,6 +74,7 @@ class Actions:
         
     def DoMove(self):
         for (entity, cell) in self.PendingMoves:
+            if self.universe.DEBUG_MOVE: print "DoMove:",entity.Name,"is moving to",cell.Name
             entity.PendingMoves.append(cell)
         # don't do these (stuff above, below) at the same time, might be more than one entry for an entity in the list above    
         for entity in self.universe.entities:
@@ -120,3 +126,9 @@ class Actions:
         # don't do these (stuff above, below) at the same time, might be more than one entry for an entity in the list above    
         for entity in self.universe.entities:
             entity.Leach()
+
+def ValueOrDefault(d, key, default):
+    if key in d:
+        return d[key]
+    else:
+        return default

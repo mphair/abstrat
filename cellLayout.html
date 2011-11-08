@@ -33,6 +33,7 @@ line.neighbor {
     <script type="text/javascript">
         var Timestep = null;
         var SelectedEntity = null;
+        var PendingActions = {}
         var width = screen.width;
         var height = 400;
         var x = d3.scale.linear().domain([-1,10]).range([0, width - 1]);
@@ -114,6 +115,7 @@ line.neighbor {
                     .on("click", function (d,i) {
                         d3.json("../entities/"+d3.select(this).text(), function(entity) {
                             SelectedEntity = entity;
+                            if (!PendingActions[entity.team]) PendingActions[entity.team] = {};
                             var s = "==== Entity: " + entity.name + "(" + entity.team +") ====<br>";
                             s+= " Location: "+entity.presentInCell+"<br>";
                             s+= " Energy Stores: "+energyDictToText(entity.energyStores)+"<br>";
@@ -127,7 +129,8 @@ line.neighbor {
                             s+= "<form>";
                             s+= "Move: <input type=\"text\" id=\"txtmove\" />";
                             //        s+= "<button id=\"move\" onclick=\"DoMove();\">move</button>";
-                            s+= "<a href=\"#\" onclick=\"DoMove();\">move</button>";
+                            s+= "<a href=\"#\" onclick=\"DoMove();\">move</a><br>";
+                            s+= "<a href=\"#\" onclick=\"DoDone();\">Team Done.</a><br>";
                             s+= "</form>";
                             d3.select("#info").html(s); 
                         });
@@ -148,17 +151,21 @@ line.neighbor {
             var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
             var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
             d3.select("#toPost").text(pendingMoves);
-            var actions = {
-                'pendingDiscoveries': pendingDiscoveries,
-                'pendingTeachings': pendingTeachings,
-                'pendingLeachings': pendingLeachings,
-                'pendingMoves': pendingMoves,
-                'pendingSplits': pendingSplits
-            };
-            json_post("../actions/" + Timestep + "/" + SelectedEntity.team, JSON.stringify(actions), function(json) {
-                d3.select("#debugResponse").text(json);
-                CheckForNewTimestamp();
-            });
+            PendingActions[SelectedEntity.team]['pendingMoves'] = pendingMoves;  //TODO: make this concat instead
+//          'pendingDiscoveries': pendingDiscoveries,
+//          'pendingTeachings': pendingTeachings,
+//          'pendingLeachings': pendingLeachings,              
+//          'pendingSplits': pendingSplits
+        }
+
+        function DoDone() {
+            json_post("../actions/" + Timestep + "/" + SelectedEntity.team,
+                JSON.stringify(PendingActions[SelectedEntity.team]),
+                function(json) {
+                    d3.select("#debugResponse").text(json);
+                    CheckForNewTimestamp();
+                }
+            );
         }
 
         function energyDictToText(d) {
