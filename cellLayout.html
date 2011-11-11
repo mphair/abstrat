@@ -34,6 +34,7 @@ line.neighbor {
         var Timestep = null;
         var SelectedEntity = null;
         var PendingActions = {}
+        var Cells = {}
         var width = screen.width;
         var height = 400;
         var x = d3.scale.linear().domain([-1,10]).range([0, width - 1]);
@@ -60,10 +61,12 @@ line.neighbor {
                 d3.select("#info").text(""); 
                 d3.select("#toPost").text("");
                 SelectedEntity = null;
+                Cells = {}
                 var neighborLines = [];
                 for (cellIndex=0; cellIndex < json.cells.length; cellIndex++)
                 {
                     var cell = json.cells[cellIndex];
+                    Cells[cell.name] = cell;
                     for (nIndex=0; nIndex < cell.neighbors.length; nIndex++)
                     {
                         var neighbor = cell.neighbors[nIndex];
@@ -89,10 +92,19 @@ line.neighbor {
                 circles.enter()
                     .append("svg:circle")
                     .attr("visibility", "visible")
-                    .attr("r", "10");
+                    .attr("r", "10")
+//                    .on("mouseover", function (d,i) { if (ClickMode != "") d3.select(this).attr("fill", "yellow"); })
+//                    .on("mouseout", function (d,i) { if (ClickMode != "") d3.select(this).attr("fill", "white"); })
+                    .on("click", function (d,i) {
+                        if (ClickMode == "Move") {
+                            PendingActions[SelectedEntity.team]['pendingMoves'].push([SelectedEntity.name, d3.select(this).attr("name")]);
+                            d3.select("#toPost").text(PendingActions[SelectedEntity.team]['pendingMoves']);
+                        }
+                    });
                 circles.exit().remove();
                 vis.selectAll("circle")
                     .data(json.cells)
+                    .attr("name", function(c) { return c.name})
                     .attr("cx", function(c) { return x(parseFloat(c.name.substring(0,1))) })
                     .attr("cy", function(c) { return y(parseFloat(c.name.substring(2,3))) })
                     .attr("class", function(c) { return (c.entityPresent == null) ? "empty" : "full"; });
@@ -127,9 +139,9 @@ line.neighbor {
                             s+= " Leaching Defenses: "+energyDictToText(entity.leachingDefenses)+"<br>";
                             s+= " Leaching Efficencies: "+energyDictToText(entity.leachingEfficencies)+"<br>";
                             s+= "<form>";
-                            s+= "Move: <input type=\"text\" id=\"txtmove\" />";
-                            //        s+= "<button id=\"move\" onclick=\"DoMove();\">move</button>";
-                            s+= "<a href=\"#\" onclick=\"DoMove();\">move</a><br>";
+                            s+= "Move: <a href=\"#\" onclick=\"StartMove(false);\">Start</a>";
+                            s+= "<a href=\"#\" onclick=\"StartMove(true);\">Redo</a>";
+                            s+= "<a id=\"movedonebutton\" href=\"#\" onclick=\"DoMove();\" style=\"display: none\">Complete</a><br>";
                             s+= "<a href=\"#\" onclick=\"DoDone();\">Team Done.</a><br>";
                             s+= "</form>";
                             d3.select("#info").html(s); 
@@ -144,14 +156,24 @@ line.neighbor {
             }); // end cell json fetch
         } // end FetchCellLayout
 
+        function StartMove(restart) {
+            if (restart || !('pendingMoves' in PendingActions[SelectedEntity.team])) {
+                PendingActions[SelectedEntity.team]['pendingMoves'] = [];
+            }
+            ClickMode = "Move";
+            d3.select("#movedonebutton").style("display", "inline");
+        }
+
         function DoMove() {
-            var pendingDiscoveries = []; // [(entity.Name, advName, energyExpend) for (entity, advName, energyExpend) in self.PendingDiscoveries],
-            var pendingTeachings = []; //[(entity.Name, advName, energyExpend, target.Name) for (entity, advName, energyExpend, target) in self.PendingTeachings],
-            var pendingLeachings = []; //[(entity.Name, target.Name) for (entity,target) in self.PendingLeachings],
-            var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
-            var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
-            d3.select("#toPost").text(pendingMoves);
-            PendingActions[SelectedEntity.team]['pendingMoves'] = pendingMoves;  //TODO: make this concat instead
+            ClickMode = "";
+            d3.select("#movedonebutton").style("display", "none");
+//            var pendingDiscoveries = []; // [(entity.Name, advName, energyExpend) for (entity, advName, energyExpend) in self.PendingDiscoveries],
+//            var pendingTeachings = []; //[(entity.Name, advName, energyExpend, target.Name) for (entity, advName, energyExpend, target) in self.PendingTeachings],
+//            var pendingLeachings = []; //[(entity.Name, target.Name) for (entity,target) in self.PendingLeachings],
+//            var pendingMoves = [[SelectedEntity.name, d3.select("#txtmove").property("value")]];
+//            var pendingSplits = []; //[(entity.Name, cell.Name) for (entity,cell) in self.PendingSplits]})
+//            d3.select("#toPost").text(pendingMoves);
+//            PendingActions[SelectedEntity.team]['pendingMoves'] = pendingMoves;  //TODO: make this concat instead
 //          'pendingDiscoveries': pendingDiscoveries,
 //          'pendingTeachings': pendingTeachings,
 //          'pendingLeachings': pendingLeachings,              
