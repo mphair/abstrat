@@ -23,6 +23,11 @@ circle.full {
   stroke-width: 2px;
 }
 
+circle.split {
+  fill: #0f0;
+  stroke-width: 0px;
+}
+
 line.neighbor {
   stroke: #900;
   stroke-width: 2px;
@@ -103,8 +108,12 @@ line.movepath {
                     .on("click", function (d,i) {
                         if (ClickMode == "Move") {
                             PendingActions[SelectedEntity.team]['pendingMoves'].push([SelectedEntity.name, d3.select(this).attr("name")]);
-                            d3.select("#toPost").text(PendingActions[SelectedEntity.team]['pendingMoves']);
+//                            d3.select("#toPost").text(PendingActions[SelectedEntity.team]['pendingMoves']);
                             ShowMovePath(GetMovePath(SelectedEntity));
+                        }
+                        else if (ClickMode == "Split") {
+                            PendingActions[SelectedEntity.team]['pendingSplits'].push([SelectedEntity.name, d3.select(this).attr("name")]);
+                            ShowSplits(GetSplits(SelectedEntity));
                         }
                     });
                 circles.exit().remove();
@@ -148,10 +157,14 @@ line.movepath {
                             s+= "Move: <a href=\"#\" onclick=\"StartMove(false);\">Start</a>";
                             s+= "<a href=\"#\" onclick=\"StartMove(true);\">Redo</a>";
                             s+= "<a id=\"movedonebutton\" href=\"#\" onclick=\"DoMove();\" style=\"display: none\">Complete</a><br>";
+                            s+= "Split: <a href=\"#\" onclick=\"StartSplit(false);\">Start</a>";
+                            s+= "<a href=\"#\" onclick=\"StartSplit(true);\">Redo</a>";
+                            s+= "<a id=\"splitdonebutton\" href=\"#\" onclick=\"DoSplit();\" style=\"display: none\">Complete</a><br>";
                             s+= "<a href=\"#\" onclick=\"DoDone();\">Team Done.</a><br>";
                             s+= "</form>";
                             d3.select("#info").html(s);
                             ShowMovePath(GetMovePath(SelectedEntity));
+                            ShowSplits(GetSplits(SelectedEntity));
                         });
                     });
                 texts.exit().remove();
@@ -172,6 +185,15 @@ line.movepath {
             d3.select("#movedonebutton").style("display", "inline");
         }
 
+        function StartSplit(restart) {
+            if (restart || !('pendingSplits' in PendingActions[SelectedEntity.team])) {
+                PendingActions[SelectedEntity.team]['pendingSplits'] = [];
+                ShowSplits([]);
+            }
+            ClickMode = "Split";
+            d3.select("#splitdonebutton").style("display", "inline");
+        }
+
         function GetMovePath(entity) {
             var moves = [];
             var previous = entity.presentInCell;
@@ -187,6 +209,19 @@ line.movepath {
             return moves;
         }
 
+        function GetSplits(entity) {
+            var splits = [];
+            if (!('pendingSplits' in PendingActions[entity.team])) return splits;
+            
+            for (index = 0; index < PendingActions[entity.team]['pendingSplits'].length; index++) {
+                var split = PendingActions[entity.team]['pendingSplits'][index];
+                if (split[0] == entity.name) {
+                    splits.push(split[1]);
+                }
+            }
+            return splits;
+        }
+
         function ShowMovePath(path) {
             var pathLines = vis
                 .selectAll(".movepath")
@@ -199,12 +234,30 @@ line.movepath {
                 .exit()
                 .remove();
             vis.selectAll(".movepath")
-               .data(path)
+                .data(path)
                 .attr("x1", function(step) { return x(parseFloat(step[0].substring(0,1))) })
                 .attr("y1", function(step) { return y(parseFloat(step[0].substring(2,3))) })
                 .attr("x2", function(step) { return x(parseFloat(step[1].substring(0,1))) })
                 .attr("y2", function(step) { return y(parseFloat(step[1].substring(2,3))) });
         }
+
+        function ShowSplits(splits) {
+            var splitNodes = vis
+                .selectAll(".split")
+                .data(splits);
+            splitNodes
+                .enter()
+                .append("svg:circle")
+                .attr("class", "split");
+            splitNodes
+                .exit()
+                .remove();
+            vis.selectAll(".split")
+                .data(splits)
+                .attr("r", 5)
+                .attr("cx", function(split) { return x(parseFloat(split.substring(0,1))) })
+                .attr("cy", function(split) { return y(parseFloat(split.substring(2,3))) });
+            }
 
         function DoMove() {
             ClickMode = "";
@@ -222,6 +275,11 @@ line.movepath {
 //          'pendingSplits': pendingSplits
         }
 
+        function DoSplit() {
+            ClickMode = "";
+            d3.select("#splitdonebutton").style("display", "none");
+        }
+        
         function DoDone() {
             json_post("../actions/" + Timestep + "/" + SelectedEntity.team,
                 JSON.stringify(PendingActions[SelectedEntity.team]),
