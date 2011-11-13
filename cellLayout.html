@@ -27,6 +27,11 @@ line.neighbor {
   stroke: #900;
   stroke-width: 2px;
 }
+
+line.movepath {
+  stroke: #aa0;
+  stroke-width: 5px;
+}
     </style>
   </head>
   <body>
@@ -99,6 +104,7 @@ line.neighbor {
                         if (ClickMode == "Move") {
                             PendingActions[SelectedEntity.team]['pendingMoves'].push([SelectedEntity.name, d3.select(this).attr("name")]);
                             d3.select("#toPost").text(PendingActions[SelectedEntity.team]['pendingMoves']);
+                            ShowMovePath(GetMovePath(SelectedEntity));
                         }
                     });
                 circles.exit().remove();
@@ -144,7 +150,8 @@ line.neighbor {
                             s+= "<a id=\"movedonebutton\" href=\"#\" onclick=\"DoMove();\" style=\"display: none\">Complete</a><br>";
                             s+= "<a href=\"#\" onclick=\"DoDone();\">Team Done.</a><br>";
                             s+= "</form>";
-                            d3.select("#info").html(s); 
+                            d3.select("#info").html(s);
+                            ShowMovePath(GetMovePath(SelectedEntity));
                         });
                     });
                 texts.exit().remove();
@@ -159,9 +166,44 @@ line.neighbor {
         function StartMove(restart) {
             if (restart || !('pendingMoves' in PendingActions[SelectedEntity.team])) {
                 PendingActions[SelectedEntity.team]['pendingMoves'] = [];
+                ShowMovePath([]);
             }
             ClickMode = "Move";
             d3.select("#movedonebutton").style("display", "inline");
+        }
+
+        function GetMovePath(entity) {
+            var moves = [];
+            var previous = entity.presentInCell;
+            if (!('pendingMoves' in PendingActions[entity.team])) return moves;
+            
+            for (index = 0; index < PendingActions[entity.team]['pendingMoves'].length; index++) {
+                var move = PendingActions[entity.team]['pendingMoves'][index];
+                if (move[0] == entity.name) {
+                    moves.push([previous,move[1]]);
+                    previous = move[1];
+                }
+            }
+            return moves;
+        }
+
+        function ShowMovePath(path) {
+            var pathLines = vis
+                .selectAll(".movepath")
+                .data(path);
+            pathLines
+                .enter()
+                .append("svg:line")
+                .attr("class", "movepath");
+            pathLines
+                .exit()
+                .remove();
+            vis.selectAll(".movepath")
+               .data(path)
+                .attr("x1", function(step) { return x(parseFloat(step[0].substring(0,1))) })
+                .attr("y1", function(step) { return y(parseFloat(step[0].substring(2,3))) })
+                .attr("x2", function(step) { return x(parseFloat(step[1].substring(0,1))) })
+                .attr("y2", function(step) { return y(parseFloat(step[1].substring(2,3))) });
         }
 
         function DoMove() {
@@ -188,6 +230,7 @@ line.neighbor {
                     CheckForNewTimestamp();
                 }
             );
+            PendingActions[SelectedEntity.team] = {};
         }
 
         function energyDictToText(d) {
