@@ -71,10 +71,18 @@ class Entity:
     def InitMoves(self):
         self.__moveChancesRemaining = self.MovementRate
     def OpenMove(self):
-        if len(self.PendingMoves) != 0 and self.__moveChancesRemaining != 0:
-            self.PendingMoves[0].EntitiesArriving.append(self)
-            return True
-        else: return False
+        if self.Universe.DEBUG_MOVE: print "Entity", self.Name, "opening move..."
+        if len(self.PendingMoves) != 0:
+            if self.__moveChancesRemaining != 0:
+                if self.Universe.DEBUG_MOVE: print "...move opened."
+                self.PendingMoves[0].EntitiesArriving.append(self)
+                return True
+            else:
+                if self.Universe.DEBUG_MOVE: print "...no move chances remaining."
+                return False
+        else:
+            if self.Universe.DEBUG_MOVE: print "...no poending moves."
+            return False
     def CloseMove(self):
         if (self.__moveChancesRemaining > 0): self.__moveChancesRemaining -= 1
         if len(self.PendingMoves) > 0 and self.PendingMoves[0] == self.PresentInCell:
