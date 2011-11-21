@@ -62,16 +62,25 @@ class AbstratRESTHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if not(responded):
                 print "not responded"
                 self.send_error(404, "entity "+pathParts[2]+" not found")
+        elif pathParts[1].lower() == "advancements":
+            if pathParts[2].lower() == "all":
+                self.respondJson(o={'advancements':{key:{'energyRequirements':value[0],'prereqs':value[1]} for key,value in universe.Advancements.items()}})
+            else:
+                self.send_error(404, "available advancements commands: all")
         elif pathParts[1].lower() == "html":
             if pathParts[2].lower() == "celllayout.html":
                 self.respondHtml("cellLayout.html")
             else:
                 self.send_error(404, "unknown file:"+pathParts[2])
+        elif pathParts[1].lower() == "config":
+            self.respondJson(s=universe.config.ToJson())
+#################
 ##for offline use
         elif pathParts[1].lower() == "d3.js":
             self.respondJavascript("d3.js")
-        elif pathParts[1].lower() == "config":
-            self.respondJson(s=universe.config.ToJson())
+        elif pathParts[1].lower() == "d3.layout.js":
+            self.respondJavascript("d3.layout.js")
+#################
         else:
             self.send_error(404)
             
