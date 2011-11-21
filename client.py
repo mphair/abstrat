@@ -118,7 +118,7 @@ class AbstratRESTClient:
             print response.read()
             raise "sadface"
 
-    def PollForNewTime(self): 
+    def PollForNewTime(self, takeWhatever=False):
         while (True):
             conn = httplib.HTTPConnection(self.serverAddress,port=self.port)
             conn.request("GET", "/timestep/latest")
@@ -129,9 +129,9 @@ class AbstratRESTClient:
                 print response.read()
                 raise "sadface"
             newT = int(json.loads(response.read())['t'])
-            t = self.universe.t+1
-            if newT == t:
-                self.t = t
+            
+            if takeWhatever or newT == self.universe.t+1:
+                self.t = newT
                 return
             elif t < newT:
                 raise "t on server is "+str(newT)+" -- we're looking for "+str(t)
@@ -171,11 +171,11 @@ class AbstratRESTClient:
         return True
     ShowHelp.Help = "? [command] - show help for command or list commands if command is empty"
     
-    def Play(self, serverAddress, port, team, t):
+    def Play(self, serverAddress, port, team):
         self.serverAddress = serverAddress
         self.port = port
+        self.PollForNewTime(True)
         self.Team = team
-        self.t = t
         self.restartLoop = False
         playing = True
         while (playing):
@@ -209,6 +209,5 @@ class AbstratRESTClient:
 if __name__=='__main__':
     serverAddress = raw_input("server address? ")
     port = raw_input("port? ")
-    t = int(raw_input("time server is at? "))
     team = raw_input("team you are playing? ")
-    AbstratRESTClient().Play(serverAddress, port, team, t)
+    AbstratRESTClient().Play(serverAddress, port, team)
